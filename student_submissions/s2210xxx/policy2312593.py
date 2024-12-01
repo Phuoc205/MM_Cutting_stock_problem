@@ -37,9 +37,9 @@ class Policy2312593(Policy):
                 key=lambda idx: self._get_stock_size_(self.stocks[idx])[0] * self._get_stock_size_(self.stocks[idx])[1],
                 reverse=True,
             )
-            print (products_indices)
+            #print (products_indices)
             for pr_idx in products_indices:
-                print(pr_idx , ": ", self.products[pr_idx]["quantity"])
+                #print(pr_idx , ": ", self.products[pr_idx]["quantity"])
                 prod = self.products[pr_idx]
                 # Kiểm tra số lượng của sản phẩm
                 while prod["quantity"] > 0:
@@ -60,7 +60,7 @@ class Policy2312593(Policy):
                                 if self._can_place_(stock, (x, y), prod_size):
                                     pos_x, pos_y = x, y
                                     self.paint(st_idx, pr_idx, (pos_x, pos_y))
-                                    break   
+                                    break
                             
                             if pos_x is not None and pos_y is not None:
                                 break
@@ -69,8 +69,7 @@ class Policy2312593(Policy):
                             break      
                         
         # Lấy product ra từ stock đã fill
-        stock_idx, prod_size, position = self.get_from_stocks()
-        return {"stock_idx": stock_idx, "size": prod_size, "position": position}
+        return self.get_from_stocks()
 
 
     # Hàm này sẽ có chức năng khởi tạo các giá trị bên trong hàm khởi tạo của class
@@ -86,6 +85,10 @@ class Policy2312593(Policy):
     # sẽ lấy index của product đó. Thực hiện tô lại màu -1 cho product đã lấy ra, chuyển cutted_stock về 0 
     def get_from_stocks(self):
         
+        prod_size = [0, 0]
+        stock_idx = -1
+        pos_x, pos_y = 0, 0
+        cutted = False
         for st_idx in range(self.num_stocks):
             if self.cutted_stocks[st_idx] == 1:
                 stock = self.stocks[st_idx]
@@ -97,10 +100,26 @@ class Policy2312593(Policy):
                             pr_idx = stock[i, j]
                             prod_w, prod_h = self.products[pr_idx]["size"]
                             prod_w, prod_h = int(prod_w), int(prod_h)
-
+                            
                             stock[i : i + prod_w, j : j + prod_h] = -1
                             
-                            if(np.all(stock<0)):
+                            if np.all(stock<0):
                                 self.cutted_stocks[st_idx] = 0
                                 
-                            return {"stock_idx": st_idx, "size": [prod_w, prod_h], "position": (i, j)}
+                            pos_x, pos_y = i, j
+                            prod_size = [prod_w, prod_h]
+                            stock_idx = st_idx
+                            cutted = True
+                            
+                            if cutted:
+                                break
+                        
+                    if cutted:
+                        break
+                        
+                if cutted:
+                    break
+                
+                
+        
+        return {"stock_idx": stock_idx, "size": prod_size, "position": (pos_x, pos_y)}
