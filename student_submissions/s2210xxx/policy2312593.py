@@ -1,6 +1,8 @@
 from policy import Policy
 import numpy as np
 
+#add some text here
+#gg...
 class Policy2312593(Policy):
     def __init__(self):
         self.stocks = None
@@ -37,6 +39,7 @@ class Policy2312593(Policy):
                 key=lambda idx: self._get_stock_size_(self.stocks[idx])[0] * self._get_stock_size_(self.stocks[idx])[1],
                 reverse=True,
             )
+            
             print (products_indices)
             for pr_idx in products_indices:
                 print(pr_idx , ": ", self.products[pr_idx]["quantity"])
