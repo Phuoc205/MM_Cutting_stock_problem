@@ -3,12 +3,15 @@ import numpy as np
 
 class Policy2312593(Policy):
     def __init__(self):
-        self.stocks = None
-        self.products = None
+        self.stocks = []
+        self.products = []
         self.num_stocks = 0
         self.num_products = 0
-        self.cutted_stocks = None
+        self.cutted_stocks = []
         self.first_action =  True
+        self.stocks_indices = []
+        self.products_indices = []
+        self.waste = []
         
     def paint(self, stock_idx, prod_idx, position):
         size = self.products[prod_idx]["size"]
@@ -26,27 +29,14 @@ class Policy2312593(Policy):
             self.init_variable(observation["stocks"], observation["products"])
             self.first_action = False
             
-            # Descending
-            products_indices = sorted(
-                range(self.num_products),
-                key=lambda idx: self.products[idx]["size"][0] * self.products[idx]["size"][1],
-                reverse=True,
-            )
-            stocks_indices = sorted(
-                range(self.num_stocks),
-                key=lambda idx: self._get_stock_size_(self.stocks[idx])[0] * self._get_stock_size_(self.stocks[idx])[1],
-                reverse=True,
-            )
-            #print (products_indices)
-            for pr_idx in products_indices:
-                #print(pr_idx , ": ", self.products[pr_idx]["quantity"])
+            for pr_idx in self.products_indices:
                 prod = self.products[pr_idx]
                 # Kiểm tra số lượng của sản phẩm
                 while prod["quantity"] > 0:
                     prod_size = prod["size"]
 
                     # Vòng lặp duyệt qua tất cả stock
-                    for st_idx in stocks_indices:
+                    for st_idx in self.stocks_indices:
                         stock = self.stocks[st_idx]
                         stock_w, stock_h = self._get_stock_size_(stock)
                         prod_w, prod_h = prod_size
@@ -66,8 +56,13 @@ class Policy2312593(Policy):
                                 break
                             
                         if pos_x is not None and pos_y is not None:
-                            break      
-                        
+                            break
+        
+        for i in range(self.num_stocks):
+            used = np.sum(self.stocks[i] >= 0)
+            canuse = np.sum(self.stocks[i] >= -1)
+            self.waste.append(1-used/canuse)
+
         # Lấy product ra từ stock đã fill
         return self.get_from_stocks()
 
@@ -80,6 +75,18 @@ class Policy2312593(Policy):
         self.num_products = len(list_products)
         self.num_stocks = len(list_stocks)
         self.cutted_stocks = np.full((self.num_stocks,), fill_value=0, dtype=int)
+        
+        # Descending
+        self.products_indices = sorted(
+            range(self.num_products),
+            key=lambda idx: self.products[idx]["size"][0] * self.products[idx]["size"][1],
+            reverse=True,
+        )
+        self.stocks_indices = sorted(
+            range(self.num_stocks),
+            key=lambda idx: self._get_stock_size_(self.stocks[idx])[0] * self._get_stock_size_(self.stocks[idx])[1],
+            reverse=True,
+        )
         
     # Mô tả: Hàm này sẽ tìm trong đống stock đã cắt, kiểm tra trong stock đã cắt đó nếu chứa product nào thì mình 
     # sẽ lấy index của product đó. Thực hiện tô lại màu -1 cho product đã lấy ra, chuyển cutted_stock về 0 
@@ -96,7 +103,7 @@ class Policy2312593(Policy):
                 
                 for i in range(stock_w):
                     for j in range(stock_h):
-                        if stock[i, j] > 0:
+                        if stock[i, j] >= 0:
                             pr_idx = stock[i, j]
                             prod_w, prod_h = self.products[pr_idx]["size"]
                             prod_w, prod_h = int(prod_w), int(prod_h)
@@ -120,6 +127,7 @@ class Policy2312593(Policy):
                 if cutted:
                     break
                 
-                
-        
         return {"stock_idx": stock_idx, "size": prod_size, "position": (pos_x, pos_y)}
+    
+    def evaluate(self):
+        print(self.waste)
