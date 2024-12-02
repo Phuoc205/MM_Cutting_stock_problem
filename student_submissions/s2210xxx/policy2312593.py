@@ -1,8 +1,6 @@
 from policy import Policy
 import numpy as np
 
-#add some text here
-#gg...
 class Policy2312593(Policy):
     def __init__(self):
         self.stocks = []
@@ -31,25 +29,7 @@ class Policy2312593(Policy):
             self.init_variable(observation["stocks"], observation["products"])
             self.first_action = False
             
-<<<<<<< HEAD
             for pr_idx in self.products_indices:
-=======
-            # Descending
-            products_indices = sorted(
-                range(self.num_products),
-                key=lambda idx: self.products[idx]["size"][0] * self.products[idx]["size"][1],
-                reverse=True,
-            )
-            stocks_indices = sorted(
-                range(self.num_stocks),
-                key=lambda idx: self._get_stock_size_(self.stocks[idx])[0] * self._get_stock_size_(self.stocks[idx])[1],
-                reverse=True,
-            )
-            
-            print (products_indices)
-            for pr_idx in products_indices:
-                print(pr_idx , ": ", self.products[pr_idx]["quantity"])
->>>>>>> 51a6e33c03f37cfb3bd6f141c1b46c003abb032c
                 prod = self.products[pr_idx]
                 # Kiểm tra số lượng của sản phẩm
                 while prod["quantity"] > 0:
