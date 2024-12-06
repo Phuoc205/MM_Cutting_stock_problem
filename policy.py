@@ -97,12 +97,26 @@ class GreedyPolicy(Policy):
                     pos_x, pos_y = None, None
                     for x in range(stock_w - prod_w + 1):
                         for y in range(stock_h - prod_h + 1):
+                            
                             if self._can_place_(stock, (x, y), prod_size):
                                 pos_x, pos_y = x, y
                                 break
                         if pos_x is not None and pos_y is not None:
                             break
 
+                    if pos_x is not None and pos_y is not None:
+                        stock_idx = i
+                        break
+                    
+                    for x in range(stock_w - prod_h + 1):
+                        for y in range(stock_h - prod_w + 1):
+                            prod_size[0], prod_size[1] = prod_size[1], prod_size[0]
+                            if self._can_place_(stock, (x, y), prod_size):
+                                pos_x, pos_y = x, y
+                                break
+                        if pos_x is not None and pos_y is not None:
+                            break
+                        
                     if pos_x is not None and pos_y is not None:
                         stock_idx = i
                         break

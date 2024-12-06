@@ -1,160 +1,269 @@
 from policy import Policy
 import numpy as np
-from scipy.optimize import linprog
+import copy as cp
 import time
 
-class Simplex:
-    def __init__(self, L, products, b, a):
-        self.L = L  # Chiều dài của tấm stock
-        self.products = products  # Chiều dài của các sản phẩm
-        self.b = b  # Số lượng sản phẩm cần cắt
-        self.a = a  # Ma trận a_ij (số lượng sản phẩm j có thể cắt từ stock i)
-        self.num_stock = a.shape[0]  # Số lượng loại tấm stock
-        self.num_products = len(products)  # Số lượng sản phẩm
-        self.tableau = None  # Bảng Simplex
-        self.basis = []  # Biến cơ sở ban đầu
-
-    def initialize_tableau(self):
-        # Xây dựng bảng Simplex ban đầu
-        identity = np.eye(self.num_stock)
-        self.tableau = np.hstack((self.a, identity, self.b.reshape(-1, 1)))
-
-        # Thêm hàng hàm mục tiêu (chúng ta tối thiểu hóa số tấm stock)
-        z_row = np.hstack((-np.ones(self.num_stock), np.zeros(self.num_stock + 1)))
-        self.tableau = np.vstack((self.tableau, z_row))
-
-        # Xác định biến cơ sở ban đầu
-        self.basis = list(range(self.num_products, self.num_products + self.num_stock))
-        
-    def solve(self):
-        # Giải bài toán Simplex sử dụng scipy linprog
-        c = np.ones(self.num_stock)
-        result = linprog(c, A_ub=self.a, b_ub=self.b, method='simplex')
-        return result.x, result.fun  # Trả về số lượng tấm stock và chi phí tối thiểu
-
-    def get_action(self):
-        # Trả về hành động (tấm stock và vị trí cắt) dựa trên kết quả giải bài toán
-        solution, _ = self.solve()
-        return solution
-    
 class Policy2312776(Policy):
-    
-    def __init__(self, simplex = False):
-        # Giả sử `simplex` là một đối tượng hoặc phương thức tối ưu
-        self.simplex = simplex
-        self.evalue = {}
+    def __init__(self):
+        # data variable
+        self.stocks = []
+        self.products = []
 
-    def get_action(self, observation, info):
-        # Lấy thông tin về các sản phẩm và các tấm stock từ observation
-        stocks = observation["stocks"]
-        products = observation["products"]
+        # other
+        self.num_stocks = 0
+        self.num_products = 0
+        self.amount_of_products = 0
 
-        # Quyết định hành động (chọn sản phẩm và tấm stock để cắt)
-        # Dựa trên các thông tin trong Simplex và environment
-        action = self._select_action(stocks, products, info)
+        # action variable
+        self.list_flags = [[]]
+        self.action_list = []
+        self.first_action = True
+        self.action_called = 0
 
-        # Trả về hành động dưới dạng một dictionary
-        return action
+        # index variable
+        self.stocks_indices = []
+        self.products_indices = []
 
-    def _select_action(self, stocks, products, info):
-        """
-        Phương thức này có thể sử dụng thuật toán Simplex hoặc một chiến lược tối ưu
-        để chọn hành động phù hợp (chọn sản phẩm, tấm stock, vị trí cắt).
-        """
+        # evaluate variable
+        self.cutted_stocks = []
+        self.total_time = 0
         
-        # Tìm tấm stock phù hợp để cắt sản phẩm
-        stock_idx, size, position = self.execute_simplex(stocks, products)
+    def reset(self):
+        # data variable
+        self.stocks = []
+        self.products = []
 
-        # Tạo hành động
-        action = {
-            "stock_idx": stock_idx,
-            "size": size,
-            "position": position
-        }
+        # other
+        self.num_stocks = 0
+        self.num_products = 0
+        self.amount_of_products = 0
 
-        return action
+        # action variable
+        self.list_flags = [[]]
+        self.action_list = []
+        self.first_action = True
+        self.action_called = 0
 
-    def _get_available_product(self, products):
-        """Tìm sản phẩm có sẵn chưa được cắt hết"""
-        for product in products:
-            if product["quantity"] > 0:
-                return product
-        return None
+        # index variable
+        self.stocks_indices = []
+        self.products_indices = []
 
-    def execute_simplex(self, stocks, products):
-        """
-        Phương thức này sử dụng Simplex để tìm tấm stock và vị trí cắt tối ưu.
-        """
-        
-        
-        # Thiết lập bài toán tối ưu với Simplex
-        # Giả sử có các biến: X[i] = 1 nếu sản phẩm thứ i được cắt vào stock thứ i, và 0 nếu không
-        num_stocks = len(stocks)
-        num_products = len(products)
-        
-        # Lấy diện tích của phần stock chưa được fill, phần fill rồi sẽ là 0
-        areas = []
-        for stock in stocks:
-            # Kiểm tra xem stock có ô trống (-1) tức là được fill hay không
-            if np.any(stock == -1):
-                # Nếu đã được fill rồi, diện tích là 0
-                areas.append(0)
-            else:
-                # Tính diện tích hợp lệ (không phải -2)
-                valid_area = np.sum(stock != -2)
-                areas.append(valid_area)
-            
-        # Hàm mục tiêu: tối thiểu hóa diện tích sử dụng
-        c = np.array(areas)
-        
-        # Ràng buộc: kích thước sản phẩm phải vừa với tấm stock
-        A_eq = []
-        b_eq = []
+        # evaluate variable
+        self.cutted_stocks = []
+        self.total_time = 0
 
-        # Các ràng buộc để sản phẩm có thể vừa trong stock
-        for i, stock in enumerate(stocks):
-            stock_width = np.sum(np.any(stock != -2, axis=1))
-            stock_height = np.sum(np.any(stock != -2, axis=0))
-            
-            # Ràng buộc về diện tích stock
-            row = np.zeros(num_stocks)
-            row[i] = 1
-            A_eq.append(row)
-            b_eq.append(stock_width * stock_height)
-        
-        # Giải bài toán tối ưu hóa tuyến tính
-        result = linprog(c, A_eq=np.array(A_eq), b_eq=np.array(b_eq), method='simplex')
-
-        # Kiểm tra kết quả
-        if result.success:
-            # Chọn tấm stock và vị trí cắt từ kết quả của Simplex
-            stock_idx = np.argmax(result.x)
-            return stock_idx, (0, 0)  # Vị trí cắt có thể là (0, 0) hoặc tính toán thêm
-        else:
-            return None, None
-
-    def fill_in_stock(self, stock, product):
+    # lấy 2 hàm bên policy.py qua 
+    def _get_stock_size_(self, stock):
         stock_w = np.sum(np.any(stock != -2, axis=1))
         stock_h = np.sum(np.any(stock != -2, axis=0))
-        prod_w = product['width']
-        prod_h = product['height']
-        pos_x, pos_y = None
+
+        return stock_w, stock_h
+
+    def _can_place_(self, stock, position, prod_size):
+        pos_x, pos_y = position
+        prod_w, prod_h = prod_size
+
+        return np.all(stock[pos_x : pos_x + prod_w, pos_y : pos_y + prod_h] == -1)
+
+    # thêm trường hợp "paint" với prod_idx = -1 hay nói cách khác là xóa
+    def paint(self, stock_idx, prod_idx, position, custom_size):
+        width, height = (0, 0)
+        if (prod_idx==-1):
+            width, height = custom_size
+        else:
+            self.cutted_stocks[stock_idx] = 1
+            size = self.products[prod_idx]["size"]
+            width, height = size
+
+            self.products[prod_idx]["quantity"] -= 1
+
+        x, y = position
+        stock = self.stocks[stock_idx]
+        stock[x : x + width, y : y + height] = prod_idx
         
-        for x in range(stock_w - prod_w + 1):
-            for y in range(stock_h - prod_h + 1):
-                if self._can_place_(stock, (x, y), product['size']):
-                    pos_x, pos_y = x, y
-                    break
-            if pos_x is not None and pos_y is not None:
-                break
+        if (np.all(stock<0)):
+            self.cutted_stocks[stock_idx] = 0
+
+    def get_action(self, observation, info):
+        # Lấy thời gian bắt đầu
+        start_time = time.time()
+        # Chạy chương trình
+        
+        
+        if self.first_action:
+            # hàm reset
+            self.reset()
+            self.init_variable(observation["stocks"], observation["products"])
+            self.first_action = False
             
-        if pos_x is not None and pos_y is not None:
-            return True  # Trả về True nếu đã fill thành công
+            for pr_idx in self.products_indices:
+                prod = self.products[pr_idx]
+                # Kiểm tra số lượng của sản phẩm
+                while prod["quantity"] > 0:
+                    prod_size = prod["size"]
 
-        return False
+                    # Vòng lặp duyệt qua tất cả stock
+                    for st_idx in self.stocks_indices:
+                        stock = self.stocks[st_idx]
+                        stock_w, stock_h = self._get_stock_size_(stock)
+                        prod_w, prod_h = prod_size
+                        flag = self.list_flags[st_idx]
+                        
+                        if stock_w < prod_w or stock_h < prod_h:
+                            continue
 
-    def get_evaluate(self):
-        return self.evalue
-    
+                        found = False
+                        for i in range(len(flag) - 1):
+                            gap_start, gap_end = flag[i], flag[i + 1]
+                            # Điều kiện kiểm tra khoảng trống đủ để đặt sản phẩm
+                            if prod_w <= gap_end - gap_start:
+                                pos_x, pos_y = None, None
+                                for x in range(gap_start, gap_end - prod_w + 1):
+                                    for y in range(stock_h - prod_h + 1):
+                                        if self._can_place_(stock, (x, y), prod_size):
 
+                                            pos_x, pos_y = x, y
+                                            self.paint(st_idx, pr_idx, (pos_x, pos_y), [])
+                                            # thêm bước thêm action vào 1 danh sách
+                                            self.action_list.append({"stock_idx": st_idx, "size": prod_size, "position": (pos_x, pos_y), "product_idx": pr_idx})
+                                            print({"stock_idx": st_idx, "size": prod_size, "position": (pos_x, pos_y), "product_idx": pr_idx})
+                                            # Cập nhật flag
+                                            flag.append(x+prod_w)
+                                            flag.sort()
+                                            found = True
+                                            break  # Thoát khỏi vòng lặp tìm khoảng phù hợp
+                                    if found:
+                                        break
+                            
+                            if found:
+                                break
+                            
+                        if found:
+                            break
+            
+            # for st_idx in reversed(self.stocks_indices):
+            #     if (self.cutted_stocks[st_idx]==0):
+            #         continue
                 
+            #     change = False
+            #     stock = self.stocks[st_idx]
+            #     size = self._get_stock_size_(stock)
+
+            #     # tìm product ảo
+            #     temp_w = max(np.sum(stock>=0, axis=0))
+            #     temp_h = max(np.sum(stock>=0, axis=1))
+            #     # print (temp_w, " ", temp_h)
+
+            #     # cắt thử các stock nhỏ hơn
+            #     for st_idx2 in reversed(self.stocks_indices):
+            #         check_stock = self.stocks[st_idx2]
+            #         check_size = self._get_stock_size_(check_stock)
+                    
+            #         if (check_size[0] * check_size[1] < temp_w * temp_h):
+            #             break
+
+            #         if (check_size[0] * check_size[1] >= size[0] * size[1]):
+            #             break
+
+            #         # khi thay được ta thay tất cả các bước có stock index cũ sang mới, trong quá trình đó thực hiện paint -1 và cả product mới
+            #         # Phát hỏi? liệu có cần phải paint lại không? có ảnh hưởng gì nhiều không? cái quantity khi dùng paint ra âm có sao không?
+            #         if self._can_place_(check_stock, (0,0), (temp_w, temp_h)):
+            #             for ac in self.action_list:
+            #                 self.paint(st_idx, -1, (0,0), (temp_w, temp_h))
+            #                 if ac['stock_idx']==st_idx:
+            #                     self.paint(st_idx2, ac['product_idx'], ac['position'], ())
+            #                     ac['stock_idx'] = st_idx2
+            #                     change = True
+            #     if not change:
+            #         break            
+                        
+
+        # Lấy thời gian kết thúc
+        end_time = time.time()
+        self.total_time += end_time - start_time
+        # Lấy product ra từ stock đã fill
+        return self.get_from_stocks()
+
+    # Hàm này sẽ có chức năng khởi tạo các giá trị bên trong hàm khởi tạo của class
+    def init_variable(self, list_stocks, list_products):
+        self.stocks = [np.copy(stock) for stock in list_stocks]
+        self.products = []
+
+        # Xoay sản phẩm để chiều rộng lớn hơn hoặc bằng chiều cao
+        for prod in list_products:
+            size = prod["size"]
+            if size[1] > size[0]:
+                size = size[::-1]
+            self.products.append({"size": size, "quantity": prod["quantity"]})
+
+        self.num_products = len(list_products)
+        self.num_stocks = len(list_stocks)
+        self.cutted_stocks = np.full((self.num_stocks,), fill_value=0, dtype=int)
+        
+        # Sắp xếp products theo kích thước 1 chiều giảm dần
+        self.products_indices = sorted(
+            range(self.num_products),
+            key=lambda idx: max(self.products[idx]["size"]),
+            reverse=True,
+        )
+
+        # Sắp xếp stocks theo kích thước 1 chiều giảm dần
+        self.stocks_indices = sorted(
+            range(self.num_stocks),
+            key=lambda idx: max(self._get_stock_size_(self.stocks[idx])),
+            reverse=True,
+        )
+        
+        for idx in self.stocks_indices:
+            stock_size = self._get_stock_size_(self.stocks[idx])
+            if stock_size[1] > stock_size[0]:  # Rotate stock to ensure width >= height
+                self.stocks[idx] = np.transpose(self.stocks[idx])
+
+        for stock in self.stocks:
+            stock_width, _ = self._get_stock_size_(stock)
+            # Khởi tạo listflag là danh sách có một khoảng duy nhất ban đầu
+            self.list_flags.append([0, stock_width])
+            
+        # Đếm số lượng mẫu cần cắt
+        for prod in self.products:
+            self.amount_of_products+=prod['quantity']
+        
+    # Mô tả: Hàm này sẽ tìm trong đống stock đã cắt, kiểm tra trong stock đã cắt đó nếu chứa product nào thì mình 
+    # sẽ lấy index của product đó. Thực hiện tô lại màu -1 cho product đã lấy ra, chuyển cutted_stock về 0
+    def get_from_stocks(self):                
+        # lấy Action
+        action = self.action_list[self.action_called]
+
+        # xem đã đủ hay chưa, nếu đã lấy hết action, thì set first_action=True để reset cho dữ liệu mới
+        if (self.action_called==self.amount_of_products-1):
+            self.first_action = True
+        else:
+            self.action_called+=1
+
+        return action
+    
+    # cân đo đông đếm
+    def evaluate(self):
+
+        # số stock sử dụng
+        amount_stocks = np.sum(self.cutted_stocks)
+        # tính diện tích đã dùng và đã cắt (filled)
+        used = 0
+        filled = 0
+        for st_idx in self.stocks_indices:
+            if (self.cutted_stocks[st_idx]==1):
+                stock = self.stocks[st_idx]
+                size = self._get_stock_size_(stock)
+
+                filled += np.sum(stock>=0)
+                used += size[0] * size[1]
+
+        # hiển thị
+        print("[----------==========| EVALUATE |==========----------]")
+        print(" - Stocks used:    ", amount_stocks)
+        print(" - Used Surface:   ", used)
+        print(" - Waste Surface:  ", used - filled)
+        print(" - Filled Surface: ", filled)
+        print(" - Waste Percent:  ", (1-filled/used)*100, "%")
+        print(" - Total Time:     ", self.total_time, "s")
+        print("[----------==========| EVALUATE |==========----------]")

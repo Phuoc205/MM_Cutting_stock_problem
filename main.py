@@ -12,7 +12,7 @@ env = gym.make(
 NUM_EPISODES = 100
 
 if __name__ == "__main__":
-    # # Reset the environment
+    # Reset the environment
     # observation, info = env.reset(seed=42)
     
     # # Test GreedyPolicy

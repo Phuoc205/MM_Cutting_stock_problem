@@ -1,6 +1,7 @@
 from policy import Policy
 import numpy as np
 import copy as cp
+import time
 
 class Policy2312593(Policy):
     def __init__(self):
@@ -24,6 +25,7 @@ class Policy2312593(Policy):
 
         # evaluate variable
         self.cutted_stocks = []
+        self.total_time = 0
         
     def reset(self):
         # data variable
@@ -46,6 +48,7 @@ class Policy2312593(Policy):
 
         # evaluate variable
         self.cutted_stocks = []
+        self.total_time = 0
 
     # lấy 2 hàm bên policy.py qua 
     def _get_stock_size_(self, stock):
@@ -82,6 +85,9 @@ class Policy2312593(Policy):
         pass
 
     def get_action(self, observation, info):
+        # Lấy thời gian bắt đầu
+        start_time = time.time()
+        # Chạy chương trình
         if self.first_action:
             # hàm reset
             self.reset()
@@ -118,6 +124,24 @@ class Policy2312593(Policy):
                             
                         if pos_x is not None and pos_y is not None:
                             break
+                        
+                        # Dành cho xoay
+                        # for x in range(stock_w - prod_h + 1):
+                        #     for y in range(stock_h - prod_w + 1):
+                        #         if self._can_place_(stock, (x, y), prod_size):
+                        #             prod_size[0], prod_size[1] = prod_size[1], prod_size[0]
+                        #             pos_x, pos_y = x, y
+                        #             self.paint(st_idx, pr_idx, (pos_x, pos_y), [], )
+                        #             # thêm bước thêm action vào 1 danh sách
+                        #             self.action_list.append({"stock_idx": st_idx, "size": prod_size, "position": (pos_x, pos_y), "product_idx": pr_idx})
+                        #             break
+                        #     if pos_x is not None and pos_y is not None:
+                        #         break
+                            
+                        # if pos_x is not None and pos_y is not None:
+                        #     break
+                        
+                        
         
             # the update algo is here
             # Phát: ý tưởng là duyệt từ sau ra các stock đã cắt từ stock đó tìm
@@ -159,6 +183,9 @@ class Policy2312593(Policy):
                 if not change:
                     break
 
+        # Lấy thời gian kết thúc
+        end_time = time.time()
+        self.total_time += end_time - start_time
         # Lấy product ra từ stock đã fill
         return self.get_from_stocks()
 
@@ -260,7 +287,7 @@ class Policy2312593(Policy):
         return action
     
     # cân đo đông đếm
-    # Phước code thêm phần module time gì nha.
+    # Phước code thêm phần module time gì nha.  @Reply: Xong rồi nhá, nó ngắn thật :V
     def evaluate(self):
 
         # số stock sử dụng
@@ -283,4 +310,5 @@ class Policy2312593(Policy):
         print(" - Waste Surface:  ", used - filled)
         print(" - Filled Surface: ", filled)
         print(" - Waste Percent:  ", (1-filled/used)*100, "%")
+        print(" - Total Time:     ", self.total_time, "s")
         print("[----------==========| EVALUATE |==========----------]")
