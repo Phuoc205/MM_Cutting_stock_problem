@@ -126,20 +126,20 @@ class Policy2312593(Policy):
                             break
                         
                         # Dành cho xoay
-                        # for x in range(stock_w - prod_h + 1):
-                        #     for y in range(stock_h - prod_w + 1):
-                        #         if self._can_place_(stock, (x, y), prod_size):
-                        #             prod_size[0], prod_size[1] = prod_size[1], prod_size[0]
-                        #             pos_x, pos_y = x, y
-                        #             self.paint(st_idx, pr_idx, (pos_x, pos_y), [], )
-                        #             # thêm bước thêm action vào 1 danh sách
-                        #             self.action_list.append({"stock_idx": st_idx, "size": prod_size, "position": (pos_x, pos_y), "product_idx": pr_idx})
-                        #             break
-                        #     if pos_x is not None and pos_y is not None:
-                        #         break
+                        for x in range(stock_w - prod_h + 1):
+                            for y in range(stock_h - prod_w + 1):
+                                if self._can_place_(stock, (x, y), prod_size):
+                                    prod_size[0], prod_size[1] = prod_size[1], prod_size[0]
+                                    pos_x, pos_y = x, y
+                                    self.paint(st_idx, pr_idx, (pos_x, pos_y), [], )
+                                    # thêm bước thêm action vào 1 danh sách
+                                    self.action_list.append({"stock_idx": st_idx, "size": prod_size, "position": (pos_x, pos_y), "product_idx": pr_idx})
+                                    break
+                            if pos_x is not None and pos_y is not None:
+                                break
                             
-                        # if pos_x is not None and pos_y is not None:
-                        #     break
+                        if pos_x is not None and pos_y is not None:
+                            break
                         
                         
         
@@ -156,8 +156,7 @@ class Policy2312593(Policy):
                 size = self._get_stock_size_(stock)
 
                 # tìm product ảo
-                temp_w = max(np.sum(stock>=0, axis=0))
-                temp_h = max(np.sum(stock>=0, axis=1))
+                temp_w, temp_h = self.calculate_bounding_box(stock)
                 # print (temp_w, " ", temp_h)
 
                 # cắt thử các stock nhỏ hơn
@@ -188,6 +187,23 @@ class Policy2312593(Policy):
         self.total_time += end_time - start_time
         # Lấy product ra từ stock đã fill
         return self.get_from_stocks()
+    
+    def calculate_bounding_box(self, stock):
+        # Lấy chỉ số các phần tử không âm
+        rows, cols = np.where(stock >= 0)
+
+        if rows.size == 0 or cols.size == 0:  # Nếu không có sản phẩm nào
+            return 0, 0
+
+        # Tìm chỉ số hàng và cột nhỏ nhất, lớn nhất
+        min_row, max_row = rows.min(), rows.max()
+        min_col, max_col = cols.min(), cols.max()
+
+        # Tính kích thước bao phủ
+        width = max_col - min_col + 1
+        height = max_row - min_row + 1
+
+        return width, height
 
     # Hàm này sẽ có chức năng khởi tạo các giá trị bên trong hàm khởi tạo của class
     # Initialize member variable

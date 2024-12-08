@@ -2,7 +2,7 @@ import gym_cutting_stock
 import gymnasium as gym
 import numpy as np
 from policy import GreedyPolicy, RandomPolicy
-from student_submissions.s2210xxx.policy2312593 import Policy2312593
+from student_submissions.s2210xxx.policy2312776 import Policy2312776
 
 # Create the environment
 env = gym.make(
@@ -44,7 +44,7 @@ if __name__ == "__main__":
 
     # Uncomment the following code to test your policy
     # Reset the environment
-    policy = Policy2312593()
+    policy = Policy2312776()
 
     # custom_test, minh tu cho test case de xu ly
     # info = []
