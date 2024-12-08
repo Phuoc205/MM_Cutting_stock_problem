@@ -166,8 +166,6 @@ class Policy2312776(Policy):
                         break
 
                     if self._can_place_(check_stock, (0,0), (temp_w, temp_h)):
-                        print("st_index ", st_idx , " : " ,np.sum(self.stocks[st_idx]>0))
-                        print("st_index ", st_idx2, " : " ,np.sum(self.stocks[st_idx2]>0))
                         self.copyAtoB(st_idx, (0,0), st_idx2, (0,0), (temp_w, temp_h), False)
                         for ac in self.action_list[st_idx]:
                             ac_copy = ac.copy()  # Tạo bản sao của ac
@@ -176,8 +174,6 @@ class Policy2312776(Policy):
                         
                         
                         self.action_list[st_idx].clear()
-                        print("st_index ", st_idx ,  " : " ,np.sum(self.stocks[st_idx]>0))
-                        print("st_index ", st_idx2 ,  " : ", np.sum(self.stocks[st_idx2]>0))
                         break
                         
                     # if self._can_place_(check_stock, (0,0), (temp_h, temp_w)):
@@ -235,6 +231,7 @@ class Policy2312776(Policy):
         height = size[1]
         x_A, y_A = posA
         x_B, y_B = posB
+        
         if not rotate :
             for i in range(width):
                 for j in range(height):
@@ -245,6 +242,9 @@ class Policy2312776(Policy):
                 for j in range(height):
                     self.stocks[idxB][x_B+j][y_B+i] = self.stocks[idxA][x_A+i][y_A+j]
                     self.stocks[idxA][x_A+i][y_A+j] = -1
+                    
+        if (np.all(self.stocks[idxA]<0)):
+            self.cutted_stocks[idxA] = 0
                 
 
     # Initialize member variable

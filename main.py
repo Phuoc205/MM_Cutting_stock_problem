@@ -3,19 +3,21 @@ import gymnasium as gym
 import numpy as np
 from policy import GreedyPolicy, RandomPolicy
 from student_submissions.s2210xxx.policy2312776 import Policy2312776
+from student_submissions.s2210xxx.policy2312593 import Policy2312593
+# from student_submissions.policy_7122024 import Policy2312593
 
 # Create the environment
 env = gym.make(
     "gym_cutting_stock/CuttingStock-v0",
     render_mode="human",  # Comment this line to disable rendering
-    min_w=10,
-    min_h=10,
-    max_w=30,
-    max_h=30,
-    num_stocks=10,
-    max_product_type=6,
-    max_product_per_type=7,
-    seed=42
+    # min_w=10,
+    # min_h=10,
+    # max_w=30,
+    # max_h=30,
+    # num_stocks=10,
+    # max_product_type=6,
+    # max_product_per_type=7,
+    # seed=42
 )
 NUM_EPISODES = 100
 
@@ -88,7 +90,7 @@ if __name__ == "__main__":
     # test cua thay, co render, chay 2 lan cho den khi cat het product
     observation, info = env.reset(seed=42)
     count = 0
-    for _ in range(1):
+    for _ in range(2):
         while (True):
             action = policy.get_action(observation, info)
             observation, reward, terminated, truncated, info = env.step(action)
@@ -96,6 +98,7 @@ if __name__ == "__main__":
             count += 1
             if terminated or truncated:
                 policy.evaluate()
+                # input("Nhan enter de tiep tuc")     # Chỗ này để dừng và xem kết quả, command lại để chạy bình thường
                 observation, info = env.reset()
                 break
             
