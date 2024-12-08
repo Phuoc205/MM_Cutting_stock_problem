@@ -8,6 +8,14 @@ from student_submissions.s2210xxx.policy2312776 import Policy2312776
 env = gym.make(
     "gym_cutting_stock/CuttingStock-v0",
     render_mode="human",  # Comment this line to disable rendering
+    min_w=10,
+    min_h=10,
+    max_w=30,
+    max_h=30,
+    num_stocks=10,
+    max_product_type=6,
+    max_product_per_type=7,
+    seed=42
 )
 NUM_EPISODES = 100
 
@@ -47,6 +55,7 @@ if __name__ == "__main__":
     policy = Policy2312776()
 
     # custom_test, minh tu cho test case de xu ly
+    # Phước có thể tự thiết kế 1 test case theo mẫu dưới
     # info = []
     # observation = {
     #     "products": [
@@ -68,9 +77,9 @@ if __name__ == "__main__":
     # amount = 0
     # for product in observation["products"]:
     #     amount += product["quantity"]
-    # print(amount)
+    # # print(amount)
 
-    # for _ in range(1):
+    # for _ in range(amount):
     #     action = policy.get_action(observation, info)
     #     print(action)
 
@@ -78,10 +87,13 @@ if __name__ == "__main__":
 
     # test cua thay, co render, chay 2 lan cho den khi cat het product
     observation, info = env.reset(seed=42)
-    for _ in range(2):
+    count = 0
+    for _ in range(1):
         while (True):
             action = policy.get_action(observation, info)
             observation, reward, terminated, truncated, info = env.step(action)
+            print(count, info)
+            count += 1
             if terminated or truncated:
                 policy.evaluate()
                 observation, info = env.reset()
