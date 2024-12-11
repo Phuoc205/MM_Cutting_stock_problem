@@ -1,4 +1,5 @@
 from policy import Policy
+
 import numpy as np
 import copy as cp
 import time
@@ -141,8 +142,6 @@ class Policy2312776(Policy):
                         if pos_x is not None and pos_y is not None:
                             break
                         
-                        
-        
             sorted_list = self.sort_stock_indices_by_bounding_box()
             for ele in reversed(sorted_list):
                 st_idx = ele[0]
@@ -172,15 +171,17 @@ class Policy2312776(Policy):
                             ac_copy['stock_idx'] = st_idx2  # Thay đổi stock_idx trong bản sao
                             self.action_list[st_idx2].append(ac_copy)  # Thêm bản sao vào danh sách mới
                         
-                        
                         self.action_list[st_idx].clear()
                         break
-                        
+                    
+                    
                     # if self._can_place_(check_stock, (0,0), (temp_h, temp_w)):
                     #     self.copyAtoB(st_idx, (0,0), st_idx2, (0,0), (temp_w, temp_h), True)
                     #     for ac in self.action_list[st_idx]:
-                    #         ac['stock_idx']==st_idx2
-                    #         self.action_list[st_idx2].append(ac)
+                    #         ac_copy = ac.copy()  # Tạo bản sao của ac
+                    #         ac_copy['stock_idx'] = st_idx2
+                    #         ac_copy['size'][0], ac_copy['size'][1] = ac_copy['size'][1], ac_copy['size'][0]
+                    #         self.action_list[st_idx2].append(ac_copy)
                             
                     #     self.action_list[st_idx].clear()
                     #     break
@@ -237,7 +238,7 @@ class Policy2312776(Policy):
                 for j in range(height):
                     self.stocks[idxB][x_B+i][y_B+j] = self.stocks[idxA][x_A+i][y_A+j]
                     self.stocks[idxA][x_A+i][y_A+j] = -1
-        else:
+        else :
             for i in range(width):
                 for j in range(height):
                     self.stocks[idxB][x_B+j][y_B+i] = self.stocks[idxA][x_A+i][y_A+j]
@@ -245,7 +246,7 @@ class Policy2312776(Policy):
                     
         if (np.all(self.stocks[idxA]<0)):
             self.cutted_stocks[idxA] = 0
-                
+    
 
     # Initialize member variable
     def init_variable(self, list_stocks, list_products):
@@ -306,11 +307,11 @@ class Policy2312776(Policy):
                 used += size[0] * size[1]
 
         # hiển thị
-        print("[----------==========| EVALUATE |==========----------]")
+        print("[----------==========| EVALUATE 2312776 |==========----------]")
         print(" - Stocks used:    ", amount_stocks)
         print(" - Used Surface:   ", used)
         print(" - Waste Surface:  ", used - filled)
         print(" - Filled Surface: ", filled)
         print(" - Waste Percent:  ", (1-filled/used)*100, "%")
         print(" - Total Time:     ", self.total_time, "s")
-        print("[----------==========| EVALUATE |==========----------]")
+        print("[----------==========| EVALUATE 2312776 |==========----------]")
