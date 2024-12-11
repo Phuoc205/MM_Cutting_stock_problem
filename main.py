@@ -89,7 +89,7 @@ if __name__ == "__main__":
     # policy.evaluate()
 
     # test cua thay, co render, chay 2 lan cho den khi cat het product
-    seed = 42
+    seed = 49
     
     for _ in range(3):
         observation, info = env.reset(seed = seed)
