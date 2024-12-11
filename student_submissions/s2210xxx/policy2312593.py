@@ -320,11 +320,11 @@ class Policy2312593(Policy):
                 used += size[0] * size[1]
 
         # hiển thị
-        print("[----------==========| EVALUATE |==========----------]")
+        print("[----------==========| EVALUATE 2312593 |==========----------]")
         print(" - Stocks used:    ", amount_stocks)
         print(" - Used Surface:   ", used)
         print(" - Waste Surface:  ", used - filled)
         print(" - Filled Surface: ", filled)
         print(" - Waste Percent:  ", (1-filled/used)*100, "%")
         print(" - Total Time:     ", self.total_time, "s")
-        print("[----------==========| EVALUATE |==========----------]")
+        print("[----------==========| EVALUATE 2312593 |==========----------]")
