@@ -64,14 +64,18 @@ class Policy2312593(Policy):
         return np.all(stock[pos_x : pos_x + prod_w, pos_y : pos_y + prod_h] == -1)
 
     # thêm trường hợp "paint" với prod_idx = -1 hay nói cách khác là xóa
-    def paint(self, stock_idx, prod_idx, position, custom_size):
+    def paint(self, stock_idx, prod_idx, position, custom_size, rotate):
         width, height = (0, 0)
         if (prod_idx==-1):
             width, height = custom_size
         else:
             self.cutted_stocks[stock_idx] = 1
             size = self.products[prod_idx]["size"]
-            width, height = size
+            if rotate:
+                width, height = size[1], size[0]
+            else:
+                width, height = size[0], size[1]
+
 
             self.products[prod_idx]["quantity"] -= 1
 
@@ -92,6 +96,13 @@ class Policy2312593(Policy):
             # hàm reset
             self.reset()
             self.init_variable(observation["stocks"], observation["products"])
+            print("===========================")
+            print(self.amount_of_products)
+            for pr_idx in self.products_indices:
+                print(self.products[pr_idx])
+            for st_idx in self.stocks_indices:
+                print(self._get_stock_size_(self.stocks[st_idx]))
+            print("===========================")
             self.first_action = False
             
             for pr_idx in self.products_indices:
@@ -106,40 +117,40 @@ class Policy2312593(Policy):
                         stock_w, stock_h = self._get_stock_size_(stock)
                         prod_w, prod_h = prod_size
 
-                        if stock_w < prod_w or stock_h < prod_h:
-                            continue
+                        
+                        if stock_w >= prod_w and stock_h >= prod_h:
+                            pos_x, pos_y = None, None
+                            for x in range(stock_w - prod_w + 1):
+                                for y in range(stock_h - prod_h + 1):
+                                    if self._can_place_(stock, (x, y), prod_size):
 
-                        pos_x, pos_y = None, None
-                        for x in range(stock_w - prod_w + 1):
-                            for y in range(stock_h - prod_h + 1):
-                                if self._can_place_(stock, (x, y), prod_size):
-
-                                    pos_x, pos_y = x, y
-                                    self.paint(st_idx, pr_idx, (pos_x, pos_y), [])
-                                    # thêm bước thêm action vào 1 danh sách
-                                    self.action_list.append({"stock_idx": st_idx, "size": prod_size, "position": (pos_x, pos_y), "product_idx": pr_idx})
+                                        pos_x, pos_y = x, y
+                                        self.paint(st_idx, pr_idx, (pos_x, pos_y), [], False)
+                                        # thêm bước thêm action vào 1 danh sách
+                                        self.action_list.append({"stock_idx": st_idx, "size": prod_size, "position": (pos_x, pos_y), "product_idx": pr_idx, "rotate": False})
+                                        break
+                                if pos_x is not None and pos_y is not None:
                                     break
+                                
                             if pos_x is not None and pos_y is not None:
                                 break
-                            
-                        if pos_x is not None and pos_y is not None:
-                            break
                         
                         # Dành cho xoay
-                        # for x in range(stock_w - prod_h + 1):
-                        #     for y in range(stock_h - prod_w + 1):
-                        #         if self._can_place_(stock, (x, y), prod_size):
-                        #             prod_size[0], prod_size[1] = prod_size[1], prod_size[0]
-                        #             pos_x, pos_y = x, y
-                        #             self.paint(st_idx, pr_idx, (pos_x, pos_y), [], )
-                        #             # thêm bước thêm action vào 1 danh sách
-                        #             self.action_list.append({"stock_idx": st_idx, "size": prod_size, "position": (pos_x, pos_y), "product_idx": pr_idx})
-                        #             break
-                        #     if pos_x is not None and pos_y is not None:
-                        #         break
-                            
-                        # if pos_x is not None and pos_y is not None:
-                        #     break
+                        if stock_w >= prod_h and stock_h >= prod_w:
+                            for x in range(stock_w - prod_h + 1):
+                                for y in range(stock_h - prod_w + 1):
+                                    if self._can_place_(stock, (x, y), prod_size):
+                                        prod_size[0], prod_size[1] = prod_size[1], prod_size[0]
+                                        pos_x, pos_y = x, y
+                                        self.paint(st_idx, pr_idx, (pos_x, pos_y), [], True)
+                                        # thêm bước thêm action vào 1 danh sách
+                                        self.action_list.append({"stock_idx": st_idx, "size": prod_size, "position": (pos_x, pos_y), "product_idx": pr_idx, "rotate": True})
+                                        break
+                                if pos_x is not None and pos_y is not None:
+                                    break
+                                
+                            if pos_x is not None and pos_y is not None:
+                                break
                         
                         
         
@@ -151,7 +162,6 @@ class Policy2312593(Policy):
                 if (self.cutted_stocks[st_idx]==0):
                     continue
                 
-                change = False
                 stock = self.stocks[st_idx]
                 size = self._get_stock_size_(stock)
 
@@ -175,13 +185,10 @@ class Policy2312593(Policy):
                     # Phát hỏi? liệu có cần phải paint lại không? có ảnh hưởng gì nhiều không? cái quantity khi dùng paint ra âm có sao không?
                     if self._can_place_(check_stock, (0,0), (temp_w, temp_h)):
                         for ac in self.action_list:
-                            self.paint(st_idx, -1, (0,0), (temp_w, temp_h))
+                            self.paint(st_idx, -1, (0,0), (temp_w, temp_h), False)
                             if ac['stock_idx']==st_idx:
-                                self.paint(st_idx2, ac['product_idx'], ac['position'], ())
+                                self.paint(st_idx2, ac['product_idx'], ac['position'], (), ac['rotate'])
                                 ac['stock_idx'] = st_idx2
-                                change = True
-                if not change:
-                    break
 
         # Lấy thời gian kết thúc
         end_time = time.time()

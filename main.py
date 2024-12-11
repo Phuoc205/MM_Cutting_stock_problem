@@ -3,19 +3,20 @@ import gymnasium as gym
 import numpy as np
 from policy import GreedyPolicy, RandomPolicy
 from student_submissions.s2210xxx.policy2312593 import Policy2312593
+from student_submissions.s2210xxx.policy2312776 import Policy2312776
 
 # Create the environment
 env = gym.make(
     "gym_cutting_stock/CuttingStock-v0",
     render_mode="human",  # Comment this line to disable rendering
-    min_w=10,
-    min_h=10,
-    max_w=30,
-    max_h=30,
-    num_stocks=10,
-    max_product_type=6,
-    max_product_per_type=7,
-    seed=42
+    # min_w=10,
+    # min_h=10,
+    # max_w=30,
+    # max_h=30,
+    # num_stocks=10,
+    # max_product_type=6,
+    # max_product_per_type=7,
+    # seed=42
 )
 NUM_EPISODES = 100
 
@@ -52,7 +53,7 @@ if __name__ == "__main__":
 
     # Uncomment the following code to test your policy
     # Reset the environment
-    policy = Policy2312593()
+    policy = Policy2312776()
 
     # custom_test, minh tu cho test case de xu ly
     # Phước có thể tự thiết kế 1 test case theo mẫu dưới
@@ -88,15 +89,48 @@ if __name__ == "__main__":
     # test cua thay, co render, chay 2 lan cho den khi cat het product
     observation, info = env.reset(seed=42)
     count = 0
-    for _ in range(1):
-        while (True):
-            action = policy.get_action(observation, info)
-            observation, reward, terminated, truncated, info = env.step(action)
-            print(count, info)
-            count += 1
-            if terminated or truncated:
-                policy.evaluate()
-                observation, info = env.reset()
-                break
-            
+    while (True):
+        action = policy.get_action(observation, info)
+        observation, reward, terminated, truncated, info = env.step(action)
+        # print(count, info)
+        count += 1
+        if terminated or truncated:
+            policy.evaluate()
+            observation, info = env.reset(seed=42)
+            break
+
+
+    policy2 = Policy2312593()
+    observation, info = env.reset(seed=42)
+    count = 0
+    while (True):
+        action = policy2.get_action(observation, info)
+        observation, reward, terminated, truncated, info = env.step(action)
+        # print(count, info)
+        count += 1
+        if terminated or truncated:
+            policy2.evaluate()
+            observation, info = env.reset(seed=42)
+            break
+
+    greedy = GreedyPolicy()
+    count=0
+    while (True):
+        action = greedy.get_action(observation, info)
+        observation, reward, terminated, truncated, info = env.step(action)
+        if terminated or truncated:
+            print(info)
+            observation, info = env.reset(seed=42)
+            break
+
+    random = RandomPolicy()
+    count=0
+    while (True):
+        action = random.get_action(observation, info)
+        observation, reward, terminated, truncated, info = env.step(action)
+        if terminated or truncated:
+            print(info)
+            observation, info = env.reset(seed=42)
+            break 
+
     env.close()
