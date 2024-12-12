@@ -95,7 +95,11 @@ if __name__ == "__main__":
     seed = 67
     times = 1
     
+<<<<<<< HEAD
     for _ in range(times):
+=======
+    for _ in range(1):
+>>>>>>> f1612ca338480adad62a6b05c1e4293d5e52acca
         observation, info = env.reset(seed = seed)
         while (True):
             action = policy.get_action(observation, info)
@@ -104,6 +108,10 @@ if __name__ == "__main__":
             if terminated or truncated:
                 policy.evaluate()
                 input("Nhan enter de chay tiep")
+<<<<<<< HEAD
+=======
+                seed = abs((seed*2-15)%100)
+>>>>>>> f1612ca338480adad62a6b05c1e4293d5e52acca
                 break
         
         # observation, info = env.reset(seed = seed)
@@ -118,7 +126,7 @@ if __name__ == "__main__":
                 
         # seed = abs((seed*2-15)//100)
             
-    # seed = 42
+    # seed = 67
     
     # for _ in range(3):
     #     observation, info = env.reset(seed = seed)
@@ -132,4 +140,4 @@ if __name__ == "__main__":
     #             seed = abs((seed*2-15)//100)
     #             break
             
-    # env.close()
+    env.close()

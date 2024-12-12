@@ -188,7 +188,6 @@ class Policy2312776(Policy):
                                 break
                             
             sorted_list = self.sort_stock_indices_by_bounding_box()
-            print(sorted_list)
             for ele in reversed(sorted_list):
                 st_idx = ele[0]
                 if (self.cutted_stocks[st_idx]==0):
@@ -205,13 +204,12 @@ class Policy2312776(Policy):
                     check_size = self._get_stock_size_(check_stock)
                     
                     if (check_size[0] * check_size[1] < temp_w * temp_h):
-                        continue
+                        break
 
                     if (check_size[0] * check_size[1] >= size[0] * size[1]):
-                        continue
+                        break
 
                     if self._can_place_(check_stock, (0,0), (temp_w, temp_h)):
-                        print("decide move temp", (temp_w, temp_h), "from", st_idx, "to", st_idx2)
                         self.copyAtoB(st_idx, (0,0), st_idx2, (0,0), (temp_w, temp_h))
                         break
 
@@ -262,14 +260,10 @@ class Policy2312776(Policy):
         x_A, y_A = posA
         x_B, y_B = posB
     
-        for i in range(width-1):
-            for j in range(height-1):
-                print(f"Shape of self.stocks[{idxA}]: {self.stocks[idxA].shape}")
-                print(f"Shape of self.stocks[{idxB}]: {self.stocks[idxB].shape}")
+        for i in range(width):
+            for j in range(height):
                 self.stocks[idxB][x_B+i][y_B+j] = self.stocks[idxA][x_A+i][y_A+j]
-                # print(self.stocks[idxB][x_B+i][y_B+j])
                 self.stocks[idxA][x_A+i][y_A+j] = -1
-                # print(self.stocks[idxA][x_A+i][y_A+j])
 
         for ac in self.action_list:
             if (ac['stock_idx']==idxA):
