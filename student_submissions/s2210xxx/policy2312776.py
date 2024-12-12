@@ -67,18 +67,13 @@ class Policy2312776(Policy):
     # thêm trường hợp "paint" với prod_idx = -1 hay nói cách khác là xóa
     def paint(self, stock_idx, prod_idx, position, custom_size):
         width, height = custom_size
-        if (prod_idx != -1):
-            self.cutted_stocks[stock_idx] = 1
-            self.products[prod_idx]["quantity"] -= 1
+        self.cutted_stocks[stock_idx] = 1
+        self.products[prod_idx]["quantity"] -= 1
 
         x, y = position
         stock = self.stocks[stock_idx]
         stock[x : x + width, y : y + height] = prod_idx
-        
-        if (np.all(stock<0)):
-            self.cutted_stocks[stock_idx] = 0
 
-        pass
 
     def get_action(self, observation, info):
         # Lấy thời gian bắt đầu
@@ -140,51 +135,36 @@ class Policy2312776(Policy):
                                 
                             if pos_x is not None and pos_y is not None:
                                 break
-                       
-            # sorted_list = self.sort_stock_indices_by_bounding_box()
-            # for ele in reversed(sorted_list):
-            #     st_idx = ele[0]
-            #     if (self.cutted_stocks[st_idx]==0):
-            #         continue
+            
+            sorted_list = self.sort_stock_indices_by_bounding_box()
+            for ele in reversed(sorted_list):
+                st_idx = ele[0]
+                if (self.cutted_stocks[st_idx]==0):
+                    continue
                 
-            #     stock = self.stocks[st_idx]
-            #     temp_w, temp_h = ele[1], ele[2]
-            #     size = self._get_stock_size_(stock)
-            #     # print (temp_w, " ", temp_h)
+                stock = self.stocks[st_idx]
+                temp_w, temp_h = ele[1], ele[2]
+                size = self._get_stock_size_(stock)
 
-            #     # cắt thử các stock nhỏ hơn
-            #     for st_idx2 in reversed(self.stocks_indices):
-            #         check_stock = self.stocks[st_idx2]
-            #         check_size = self._get_stock_size_(check_stock)
+                # cắt thử các stock nhỏ hơn
+                for st_idx2 in reversed(self.stocks_indices):
+                    check_stock = self.stocks[st_idx2]
+                    check_size = self._get_stock_size_(check_stock)
                     
-            #         if (check_size[0] * check_size[1] < temp_w * temp_h):
-            #             break
-
-            #         if (check_size[0] * check_size[1] >= size[0] * size[1]):
-            #             break
-
-            #         if self._can_place_(check_stock, (0,0), (temp_w, temp_h)):
-            #             self.copyAtoB(st_idx, (0,0), st_idx2, (0,0), (temp_w, temp_h), False)
-            #             for ac in self.action_list[st_idx]:
-            #                 ac_copy = ac.copy()  # Tạo bản sao của ac
-            #                 ac_copy['stock_idx'] = st_idx2  # Thay đổi stock_idx trong bản sao
-            #                 self.action_list[st_idx2].append(ac_copy)  # Thêm bản sao vào danh sách mới
-                        
-            #             self.action_list[st_idx].clear()
-            #             break
+                    # if(self.cutted_stocks[st_idx2]==1):
+                    #     continue
                     
-                    
-                    # if self._can_place_(check_stock, (0,0), (temp_h, temp_w)):
-                    #     self.copyAtoB(st_idx, (0,0), st_idx2, (0,0), (temp_w, temp_h), True)
-                    #     for ac in self.action_list[st_idx]:
-                    #         ac_copy = ac.copy()  # Tạo bản sao của ac
-                    #         ac_copy['stock_idx'] = st_idx2
-                    #         ac_copy['size'][0], ac_copy['size'][1] = ac_copy['size'][1], ac_copy['size'][0]
-                    #         self.action_list[st_idx2].append(ac_copy)
-                            
-                    #     self.action_list[st_idx].clear()
-                    #     break
+                    if (check_size[0] * check_size[1] < temp_w * temp_h):
+                        break
 
+                    if (check_size[0] * check_size[1] >= size[0] * size[1]):
+                        break
+
+                    if self._can_place_(check_stock, (0,0), (temp_w, temp_h)):
+                        self.copyAtoB(st_idx, (0,0), st_idx2, (0,0), (temp_w, temp_h), False)
+                        break
+                    
+        
         # Lấy thời gian kết thúc
         end_time = time.time()
         self.total_time += end_time - start_time
@@ -227,26 +207,26 @@ class Policy2312776(Policy):
 
     def copyAtoB(self, idxA, posA, idxB, posB, size, rotate):
         # copy từ stock A sang stock B
-        width = size[0]
-        height = size[1]
+        width, height = size
         x_A, y_A = posA
         x_B, y_B = posB
         
-        if not rotate :
-            for i in range(width):
-                for j in range(height):
-                    self.stocks[idxB][x_B+i][y_B+j] = self.stocks[idxA][x_A+i][y_A+j]
-                    self.stocks[idxA][x_A+i][y_A+j] = -1
-        else :
-            for i in range(width):
-                for j in range(height):
-                    self.stocks[idxB][x_B+j][y_B+i] = self.stocks[idxA][x_A+i][y_A+j]
-                    self.stocks[idxA][x_A+i][y_A+j] = -1
+        for i in range(width):
+            for j in range(height):
+                self.stocks[idxB][x_B+i][y_B+j] = self.stocks[idxA][x_A+i][y_A+j]
+                self.stocks[idxA][x_A+i][y_A+j] = -1
+
         
-        self.cutted_stocks[idxB] = 1   
-        if (np.all(self.stocks[idxA]<0)):
-            self.cutted_stocks[idxA] = 0
-    
+        for ac in self.action_list[idxA]:
+            ac_copy = cp.copy(ac)  # Tạo bản sao của ac
+            ac_copy['stock_idx'] = idxB  # Thay đổi stock_idx trong bản sao
+            if rotate:
+                ac_copy['size'][0], ac_copy['size'][1] = ac_copy['size'][1], ac_copy['size'][0]  # Hoán đổi kích thước nếu xoay
+            self.action_list[idxB].append(ac_copy)  # Thêm bản sao vào danh sách mới
+        
+        self.action_list[idxA].clear()
+        self.cutted_stocks[idxB] = 1
+        self.cutted_stocks[idxA] = 0
 
     # Initialize member variable
     def init_variable(self, list_stocks, list_products):
@@ -282,13 +262,11 @@ class Policy2312776(Policy):
         # lấy Action
         flattened_action_list = [action for sublist in self.action_list for action in sublist]
         action = flattened_action_list[self.action_called]
-
         # xem đã đủ hay chưa, nếu đã lấy hết action, thì set first_action=True để reset cho dữ liệu mới
-        if (self.action_called>=self.amount_of_products-1):
+        if (self.action_called==self.amount_of_products-1):
             self.first_action = True
         else:
             self.action_called+=1
-
         return action
     
     # Đánh giá giải thuật
