@@ -56,10 +56,9 @@ if __name__ == "__main__":
 
     # Uncomment the following code to test your policy
     # Reset the environment
-    policy = Policychung(1)
     # policy = Policychung(2)
-    # policy2 = ModifiedGreedy()
-    # policy2 = GreedyPolicy()
+    policy = Policychung(1)
+    # policy = ModifiedGreedy()
     # custom_test, minh tu cho test case de xu ly
     # Phước có thể tự thiết kế 1 test case theo mẫu dưới
     # info = []
@@ -92,14 +91,10 @@ if __name__ == "__main__":
     # policy.evaluate()
 
     # test cua thay, co render, chay 2 lan cho den khi cat het product
-    seed = 67
+    seed = 42
     times = 1
     
-<<<<<<< HEAD
     for _ in range(times):
-=======
-    for _ in range(1):
->>>>>>> f1612ca338480adad62a6b05c1e4293d5e52acca
         observation, info = env.reset(seed = seed)
         while (True):
             action = policy.get_action(observation, info)
@@ -108,10 +103,6 @@ if __name__ == "__main__":
             if terminated or truncated:
                 policy.evaluate()
                 input("Nhan enter de chay tiep")
-<<<<<<< HEAD
-=======
-                seed = abs((seed*2-15)%100)
->>>>>>> f1612ca338480adad62a6b05c1e4293d5e52acca
                 break
         
         # observation, info = env.reset(seed = seed)
