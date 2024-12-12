@@ -91,18 +91,19 @@ class Policy2312593(Policy):
     def get_action(self, observation, info):
         # Lấy thời gian bắt đầu
         start_time = time.time()
+
         # Chạy chương trình
         if self.first_action:
             # hàm reset
             self.reset()
             self.init_variable(observation["stocks"], observation["products"])
-            print("===========================")
-            print(self.amount_of_products)
-            for pr_idx in self.products_indices:
-                print(self.products[pr_idx])
-            for st_idx in self.stocks_indices:
-                print(self._get_stock_size_(self.stocks[st_idx]))
-            print("===========================")
+            # print("===========================")
+            # print(self.amount_of_products)
+            # for pr_idx in self.products_indices:
+            #     print(self.products[pr_idx])
+            # for st_idx in self.stocks_indices:
+            #     print(self._get_stock_size_(self.stocks[st_idx]))
+            # print("===========================")
             self.first_action = False
             
             for pr_idx in self.products_indices:
@@ -151,8 +152,8 @@ class Policy2312593(Policy):
                                 
                             if pos_x is not None and pos_y is not None:
                                 break
-                        
-                        
+            
+            print("after cut:", len(self.action_list))           
         
             # the update algo is here
             # Phát: ý tưởng là duyệt từ sau ra các stock đã cắt từ stock đó tìm
@@ -166,7 +167,8 @@ class Policy2312593(Policy):
                 size = self._get_stock_size_(stock)
 
                 # tìm product ảo
-                temp_w, temp_h = self.calculate_bounding_box(stock)
+                temp_w = max(np.sum(stock>=0, axis=0))
+                temp_h = max(np.sum(stock>=0, axis=1))
                 # print (temp_w, " ", temp_h)
 
                 # cắt thử các stock nhỏ hơn
@@ -188,29 +190,23 @@ class Policy2312593(Policy):
                             if ac['stock_idx']==st_idx:
                                 self.paint(st_idx2, ac['product_idx'], ac['position'], (), ac['rotate'])
                                 ac['stock_idx'] = st_idx2
+            
+            print("after process ",len(self.action_list))
+
+        amount_of_products = 0
+        for prod in observation['products']:
+            amount_of_products += prod['quantity']
+        # print(amount_of_products)
+        
+        if (amount_of_products==1): # it mean the action called is the last
+            print("Cut complete!")
+            self.first = True
 
         # Lấy thời gian kết thúc
         end_time = time.time()
         self.total_time += end_time - start_time
         # Lấy product ra từ stock đã fill
         return self.get_from_stocks()
-    
-    def calculate_bounding_box(self, stock):
-        # Lấy chỉ số các phần tử không âm
-        rows, cols = np.where(stock >= 0)
-
-        if rows.size == 0 or cols.size == 0:  # Nếu không có sản phẩm nào
-            return 0, 0
-
-        # Tìm chỉ số hàng và cột nhỏ nhất, lớn nhất
-        min_row, max_row = rows.min(), rows.max()
-        min_col, max_col = cols.min(), cols.max()
-
-        # Tính kích thước bao phủ
-        width = max_col - min_col + 1
-        height = max_row - min_row + 1
-
-        return width, height
 
     # Hàm này sẽ có chức năng khởi tạo các giá trị bên trong hàm khởi tạo của class
     # Initialize member variable
@@ -302,9 +298,10 @@ class Policy2312593(Policy):
         action = self.action_list[self.action_called]
 
         # xem đã đủ hay chưa, nếu đã lấy hết action, thì set first_action=True để reset cho dữ liệu mới
-        if (self.action_called==self.amount_of_products-1):
-            self.first_action = True
-        else:
+        # if (self.action_called==self.amount_of_products-1):
+        #     self.first_action = True
+        # else:
+        if (self.action_called<self.amount_of_products-1):
             self.action_called+=1
 
         return action
@@ -335,3 +332,5 @@ class Policy2312593(Policy):
         print(" - Waste Percent:  ", (1-filled/used)*100, "%")
         print(" - Total Time:     ", self.total_time, "s")
         print("[----------==========| EVALUATE 2312593 |==========----------]")
+
+        self.reset()

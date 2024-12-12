@@ -5,6 +5,7 @@ from policy import GreedyPolicy, RandomPolicy
 from student_submissions.s2210xxx.policy2312776 import Policy2312776
 from student_submissions.s2210xxx.policy2312593 import Policy2312593
 from student_submissions.s2210xxx.policychung import Policychung
+from student_submissions.s2210xxx.policy_modified_greedy import ModifiedGreedy
 # from student_submissions.policy_7122024 import Policy2312593
 
 # Create the environment
@@ -55,8 +56,10 @@ if __name__ == "__main__":
 
     # Uncomment the following code to test your policy
     # Reset the environment
-    policy1 = Policychung(1)
-    policy2 = Policychung(2)
+    policy = Policychung(1)
+    # policy = Policychung(2)
+    # policy2 = ModifiedGreedy()
+    # policy2 = GreedyPolicy()
     # custom_test, minh tu cho test case de xu ly
     # Phước có thể tự thiết kế 1 test case theo mẫu dưới
     # info = []
@@ -90,18 +93,30 @@ if __name__ == "__main__":
 
     # test cua thay, co render, chay 2 lan cho den khi cat het product
     seed = 67
+    times = 1
     
-    for _ in range(3):
+    for _ in range(times):
         observation, info = env.reset(seed = seed)
         while (True):
-            action = policy1.get_action(observation, info)
+            action = policy.get_action(observation, info)
             observation, reward, terminated, truncated, info = env.step(action)
             print(info)
             if terminated or truncated:
-                policy1.evaluate()
+                policy.evaluate()
                 input("Nhan enter de chay tiep")
-                seed = abs((seed*2-15)//100)
                 break
+        
+        # observation, info = env.reset(seed = seed)
+        # while (True):
+        #     action = policy1.get_action(observation, info)
+        #     observation, reward, terminated, truncated, info = env.step(action)
+        #     print(info)
+        #     if terminated or truncated:
+        #         policy1.evaluate()
+        #         input("Nhan enter de chay tiep")
+        #         break
+                
+        # seed = abs((seed*2-15)//100)
             
     # seed = 42
     

@@ -16,7 +16,7 @@ class Policy2312776(Policy):
         self.amount_of_products = 0
 
         # action variable
-        self.action_list = [[]]
+        self.action_list = []
         self.first_action = True
         self.action_called = 0
 
@@ -39,7 +39,7 @@ class Policy2312776(Policy):
         self.amount_of_products = 0
 
         # action variable
-        self.action_list = [[]]
+        self.action_list = []
         self.first_action = True
         self.action_called = 0
 
@@ -64,16 +64,49 @@ class Policy2312776(Policy):
 
         return np.all(stock[pos_x : pos_x + prod_w, pos_y : pos_y + prod_h] == -1)
 
-    # thêm trường hợp "paint" với prod_idx = -1 hay nói cách khác là xóa
-    def paint(self, stock_idx, prod_idx, position, custom_size):
-        width, height = custom_size
-        if (prod_idx != -1):
-            self.cutted_stocks[stock_idx] = 1
-            self.products[prod_idx]["quantity"] -= 1
+    def paint(self, action):
 
+        stock_idx = action["stock_idx"]
+        size = action["size"]
+        position = action["position"]
+
+        width, height = size
         x, y = position
-        stock = self.stocks[stock_idx]
-        stock[x : x + width, y : y + height] = prod_idx
+
+        # Check if the product is in the product list
+        product_idx = None
+        for i, product in enumerate(self.products):
+            if np.array_equal(product["size"], size) or np.array_equal(
+                product["size"], size[::-1]):
+                if product["quantity"] == 0:
+                    continue
+
+                product_idx = i  # Product index starts from 0
+                break
+
+        if product_idx is not None:
+            if 0 <= stock_idx < self.num_stocks:
+                stock = self.stocks[stock_idx]
+                # Check if the product fits in the stock
+                stock_width = np.sum(np.any(stock != -2, axis=1))
+                stock_height = np.sum(np.any(stock != -2, axis=0))
+                if (
+                    x >= 0
+                    and y >= 0
+                    and x + width <= stock_width
+                    and y + height <= stock_height):
+                    # Check if the position is empty
+                    if np.all(stock[x : x + width, y : y + height] == -1):
+                        self.cutted_stocks[stock_idx] = 1
+                        stock[x : x + width, y : y + height] = product_idx
+                        self.products[product_idx]["quantity"] -= 1
+                        print(product_idx, "remain", self.products[product_idx]['quantity'])
+                    else:
+                        print("Action is not avaiable 1")
+                else:
+                    print(stock_idx, size, x,y, stock_width, stock_height, "Action is not avaiable 2")
+        else:
+            print("Action is not avaiable 3")
         
         if (np.all(stock<0)):
             self.cutted_stocks[stock_idx] = 0
@@ -88,6 +121,13 @@ class Policy2312776(Policy):
             # hàm reset
             self.reset()
             self.init_variable(observation["stocks"], observation["products"])
+            print("===========================")
+            print(self.amount_of_products)
+            for pr_idx in self.products_indices:
+                print(self.products[pr_idx])
+            for st_idx in self.stocks_indices:
+                print(self._get_stock_size_(self.stocks[st_idx]))
+            print("===========================")
             self.first_action = False
             
             for pr_idx in self.products_indices:
@@ -108,14 +148,17 @@ class Policy2312776(Policy):
                         pos_x, pos_y = None, None
                         
                         # Dành cho không xoay
-                        if prod_w <= stock_w or prod_h <= stock_h:
+                        if stock_w >= prod_w and stock_h >= prod_h:
                             for x in range(stock_w - prod_w + 1):
                                 for y in range(stock_h - prod_h + 1):
                                     if self._can_place_(stock, (x, y), prod_size):
                                         pos_x, pos_y = x, y
-                                        self.paint(st_idx, pr_idx, (pos_x, pos_y), prod_size)
+                                        
                                         # thêm bước thêm action vào 1 danh sách
-                                        self.action_list[st_idx].append({"stock_idx": st_idx, "size": prod_size, "position": (pos_x, pos_y), "product_idx": pr_idx})
+                                        act = {"stock_idx": st_idx, "size": prod_size, "position": (pos_x, pos_y), "product_idx": pr_idx}
+                                        print(act)
+                                        self.action_list.append(act)
+                                        self.paint(act)
                                         break
                                 if pos_x is not None and pos_y is not None:
                                     break
@@ -124,66 +167,53 @@ class Policy2312776(Policy):
                                 break
                         
                         # Dành cho xoay
-                        if prod_h <= stock_w or prod_w <= stock_h:
+                        if stock_w >= prod_h and stock_h >= prod_w:
                             new_size = prod_h, prod_w
                             
                             for x in range(stock_w - prod_h + 1):
                                 for y in range(stock_h - prod_w + 1):
                                     if self._can_place_(stock, (x, y), new_size):
                                         pos_x, pos_y = x, y
-                                        self.paint(st_idx, pr_idx, (pos_x, pos_y), new_size)
+                                        
                                         # thêm bước thêm action vào 1 danh sách
-                                        self.action_list[st_idx].append({"stock_idx": st_idx, "size": new_size, "position": (pos_x, pos_y), "product_idx": pr_idx})
+                                        act = {"stock_idx": st_idx, "size": new_size, "position": (pos_x, pos_y), "product_idx": pr_idx}
+                                        print(act)
+                                        self.action_list.append(act)
+                                        self.paint(act)
                                         break
                                 if pos_x is not None and pos_y is not None:
                                     break
                                 
                             if pos_x is not None and pos_y is not None:
                                 break
-                       
-            # sorted_list = self.sort_stock_indices_by_bounding_box()
-            # for ele in reversed(sorted_list):
-            #     st_idx = ele[0]
-            #     if (self.cutted_stocks[st_idx]==0):
-            #         continue
-                
-            #     stock = self.stocks[st_idx]
-            #     temp_w, temp_h = ele[1], ele[2]
-            #     size = self._get_stock_size_(stock)
-            #     # print (temp_w, " ", temp_h)
-
-            #     # cắt thử các stock nhỏ hơn
-            #     for st_idx2 in reversed(self.stocks_indices):
-            #         check_stock = self.stocks[st_idx2]
-            #         check_size = self._get_stock_size_(check_stock)
-                    
-            #         if (check_size[0] * check_size[1] < temp_w * temp_h):
-            #             break
-
-            #         if (check_size[0] * check_size[1] >= size[0] * size[1]):
-            #             break
-
-            #         if self._can_place_(check_stock, (0,0), (temp_w, temp_h)):
-            #             self.copyAtoB(st_idx, (0,0), st_idx2, (0,0), (temp_w, temp_h), False)
-            #             for ac in self.action_list[st_idx]:
-            #                 ac_copy = ac.copy()  # Tạo bản sao của ac
-            #                 ac_copy['stock_idx'] = st_idx2  # Thay đổi stock_idx trong bản sao
-            #                 self.action_list[st_idx2].append(ac_copy)  # Thêm bản sao vào danh sách mới
-                        
-            #             self.action_list[st_idx].clear()
-            #             break
-                    
-                    
-                    # if self._can_place_(check_stock, (0,0), (temp_h, temp_w)):
-                    #     self.copyAtoB(st_idx, (0,0), st_idx2, (0,0), (temp_w, temp_h), True)
-                    #     for ac in self.action_list[st_idx]:
-                    #         ac_copy = ac.copy()  # Tạo bản sao của ac
-                    #         ac_copy['stock_idx'] = st_idx2
-                    #         ac_copy['size'][0], ac_copy['size'][1] = ac_copy['size'][1], ac_copy['size'][0]
-                    #         self.action_list[st_idx2].append(ac_copy)
                             
-                    #     self.action_list[st_idx].clear()
-                    #     break
+            sorted_list = self.sort_stock_indices_by_bounding_box()
+            print(sorted_list)
+            for ele in reversed(sorted_list):
+                st_idx = ele[0]
+                if (self.cutted_stocks[st_idx]==0):
+                    continue
+                
+                stock = self.stocks[st_idx]
+                temp_w, temp_h = ele[1], ele[2]
+                size = self._get_stock_size_(stock)
+                # print (temp_w, " ", temp_h)
+
+                # cắt thử các stock nhỏ hơn
+                for st_idx2 in reversed(self.stocks_indices):
+                    check_stock = self.stocks[st_idx2]
+                    check_size = self._get_stock_size_(check_stock)
+                    
+                    if (check_size[0] * check_size[1] < temp_w * temp_h):
+                        continue
+
+                    if (check_size[0] * check_size[1] >= size[0] * size[1]):
+                        continue
+
+                    if self._can_place_(check_stock, (0,0), (temp_w, temp_h)):
+                        print("decide move temp", (temp_w, temp_h), "from", st_idx, "to", st_idx2)
+                        self.copyAtoB(st_idx, (0,0), st_idx2, (0,0), (temp_w, temp_h))
+                        break
 
         # Lấy thời gian kết thúc
         end_time = time.time()
@@ -203,8 +233,8 @@ class Policy2312776(Policy):
         min_col, max_col = cols.min(), cols.max()
 
         # Tính kích thước bao phủ
-        width = max_col - min_col + 1
-        height = max_row - min_row + 1
+        width = max_row - min_row + 1
+        height = max_col - min_col + 1
 
         return width, height
     
@@ -225,23 +255,25 @@ class Policy2312776(Policy):
 
         return sorted_stocks
 
-    def copyAtoB(self, idxA, posA, idxB, posB, size, rotate):
+    def copyAtoB(self, idxA, posA, idxB, posB, size):
         # copy từ stock A sang stock B
         width = size[0]
         height = size[1]
         x_A, y_A = posA
         x_B, y_B = posB
-        
-        if not rotate :
-            for i in range(width):
-                for j in range(height):
-                    self.stocks[idxB][x_B+i][y_B+j] = self.stocks[idxA][x_A+i][y_A+j]
-                    self.stocks[idxA][x_A+i][y_A+j] = -1
-        else :
-            for i in range(width):
-                for j in range(height):
-                    self.stocks[idxB][x_B+j][y_B+i] = self.stocks[idxA][x_A+i][y_A+j]
-                    self.stocks[idxA][x_A+i][y_A+j] = -1
+    
+        for i in range(width-1):
+            for j in range(height-1):
+                print(f"Shape of self.stocks[{idxA}]: {self.stocks[idxA].shape}")
+                print(f"Shape of self.stocks[{idxB}]: {self.stocks[idxB].shape}")
+                self.stocks[idxB][x_B+i][y_B+j] = self.stocks[idxA][x_A+i][y_A+j]
+                # print(self.stocks[idxB][x_B+i][y_B+j])
+                self.stocks[idxA][x_A+i][y_A+j] = -1
+                # print(self.stocks[idxA][x_A+i][y_A+j])
+
+        for ac in self.action_list:
+            if (ac['stock_idx']==idxA):
+                ac['stock_idx'] = idxB 
         
         self.cutted_stocks[idxB] = 1   
         if (np.all(self.stocks[idxA]<0)):
@@ -275,13 +307,12 @@ class Policy2312776(Policy):
                     stock_indies.append(st)
         self.stocks_indices = stock_indies
         
-        self.action_list = [[] for _ in range(self.num_stocks)]
+        self.action_list = []
         
     # Lấy từng action từ stock
     def get_from_stocks(self):
         # lấy Action
-        flattened_action_list = [action for sublist in self.action_list for action in sublist]
-        action = flattened_action_list[self.action_called]
+        action = self.action_list[self.action_called]
 
         # xem đã đủ hay chưa, nếu đã lấy hết action, thì set first_action=True để reset cho dữ liệu mới
         if (self.action_called>=self.amount_of_products-1):
@@ -294,24 +325,24 @@ class Policy2312776(Policy):
     # Đánh giá giải thuật
     def evaluate(self):
         # số stock sử dụng
-        amount_stocks = np.sum(self.cutted_stocks)
-        # tính diện tích đã dùng và đã cắt (filled)
-        used = 0
-        filled = 0
-        for st_idx in self.stocks_indices:
-            if (self.cutted_stocks[st_idx]==1):
-                stock = self.stocks[st_idx]
-                size = self._get_stock_size_(stock)
+        # amount_stocks = np.sum(self.cutted_stocks)
+        # # tính diện tích đã dùng và đã cắt (filled)
+        # used = 0
+        # filled = 0
+        # for st_idx in self.stocks_indices:
+        #     if (self.cutted_stocks[st_idx]==1):
+        #         stock = self.stocks[st_idx]
+        #         size = self._get_stock_size_(stock)
 
-                filled += np.sum(stock>=0)
-                used += size[0] * size[1]
+        #         filled += np.sum(stock>=0)
+                # used += size[0] * size[1]
 
         # hiển thị
         print("[----------==========| EVALUATE 2312776 |==========----------]")
-        print(" - Stocks used:    ", amount_stocks)
-        print(" - Used Surface:   ", used)
-        print(" - Waste Surface:  ", used - filled)
-        print(" - Filled Surface: ", filled)
-        print(" - Waste Percent:  ", (1-filled/used)*100, "%")
+        # print(" - Stocks used:    ", amount_stocks)
+        # print(" - Used Surface:   ", used)
+        # print(" - Waste Surface:  ", used - filled)
+        # print(" - Filled Surface: ", filled)
+        # print(" - Waste Percent:  ", (1-filled/used)*100, "%")
         print(" - Total Time:     ", self.total_time, "s")
         print("[----------==========| EVALUATE 2312776 |==========----------]")
