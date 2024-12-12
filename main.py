@@ -89,7 +89,7 @@ if __name__ == "__main__":
     # policy.evaluate()
 
     # test cua thay, co render, chay 2 lan cho den khi cat het product
-    seed = 49
+    seed = 67
     
     for _ in range(3):
         observation, info = env.reset(seed = seed)
@@ -103,18 +103,18 @@ if __name__ == "__main__":
                 seed = abs((seed*2-15)//100)
                 break
             
-    seed = 42
+    # seed = 42
     
-    for _ in range(3):
-        observation, info = env.reset(seed = seed)
-        while (True):
-            action = policy2.get_action(observation, info)
-            observation, reward, terminated, truncated, info = env.step(action)
-            print(info)
-            if terminated or truncated:
-                policy2.evaluate()
-                input("Nhan enter de chay tiep")
-                seed = abs((seed*2-15)//100)
-                break
+    # for _ in range(3):
+    #     observation, info = env.reset(seed = seed)
+    #     while (True):
+    #         action = policy2.get_action(observation, info)
+    #         observation, reward, terminated, truncated, info = env.step(action)
+    #         print(info)
+    #         if terminated or truncated:
+    #             policy2.evaluate()
+    #             input("Nhan enter de chay tiep")
+    #             seed = abs((seed*2-15)//100)
+    #             break
             
-    env.close()
+    # env.close()

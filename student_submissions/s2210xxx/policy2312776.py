@@ -66,14 +66,9 @@ class Policy2312776(Policy):
 
     # thêm trường hợp "paint" với prod_idx = -1 hay nói cách khác là xóa
     def paint(self, stock_idx, prod_idx, position, custom_size):
-        width, height = (0, 0)
-        if (prod_idx==-1):
-            width, height = custom_size
-        else:
+        width, height = custom_size
+        if (prod_idx != -1):
             self.cutted_stocks[stock_idx] = 1
-            size = self.products[prod_idx]["size"]
-            width, height = size
-
             self.products[prod_idx]["quantity"] -= 1
 
         x, y = position
@@ -107,72 +102,76 @@ class Policy2312776(Policy):
                         stock_w, stock_h = self._get_stock_size_(stock)
                         prod_w, prod_h = prod_size
 
-                        if stock_w < prod_w or stock_h < prod_h:
+                        if((stock_w < prod_w or stock_h < prod_h) and (stock_h < prod_w or stock_w < prod_h)):
                             continue
-
+                        
                         pos_x, pos_y = None, None
-                        for x in range(stock_w - prod_w + 1):
-                            for y in range(stock_h - prod_h + 1):
-                                if self._can_place_(stock, (x, y), prod_size):
-
-                                    pos_x, pos_y = x, y
-                                    self.paint(st_idx, pr_idx, (pos_x, pos_y), [])
-                                    # thêm bước thêm action vào 1 danh sách
-                                    self.action_list[st_idx].append({"stock_idx": st_idx, "size": prod_size, "position": (pos_x, pos_y), "product_idx": pr_idx})
+                        
+                        # Dành cho không xoay
+                        if prod_w <= stock_w or prod_h <= stock_h:
+                            for x in range(stock_w - prod_w + 1):
+                                for y in range(stock_h - prod_h + 1):
+                                    if self._can_place_(stock, (x, y), prod_size):
+                                        pos_x, pos_y = x, y
+                                        self.paint(st_idx, pr_idx, (pos_x, pos_y), prod_size)
+                                        # thêm bước thêm action vào 1 danh sách
+                                        self.action_list[st_idx].append({"stock_idx": st_idx, "size": prod_size, "position": (pos_x, pos_y), "product_idx": pr_idx})
+                                        break
+                                if pos_x is not None and pos_y is not None:
                                     break
+                                
                             if pos_x is not None and pos_y is not None:
                                 break
-                            
-                        if pos_x is not None and pos_y is not None:
-                            break
                         
                         # Dành cho xoay
-                        for x in range(stock_w - prod_h + 1):
-                            for y in range(stock_h - prod_w + 1):
-                                if self._can_place_(stock, (x, y), prod_size):
-                                    prod_size[0], prod_size[1] = prod_size[1], prod_size[0]
-                                    pos_x, pos_y = x, y
-                                    self.paint(st_idx, pr_idx, (pos_x, pos_y), [], )
-                                    # thêm bước thêm action vào 1 danh sách
-                                    self.action_list[st_idx].append({"stock_idx": st_idx, "size": prod_size, "position": (pos_x, pos_y), "product_idx": pr_idx})
+                        if prod_h <= stock_w or prod_w <= stock_h:
+                            new_size = prod_h, prod_w
+                            
+                            for x in range(stock_w - prod_h + 1):
+                                for y in range(stock_h - prod_w + 1):
+                                    if self._can_place_(stock, (x, y), new_size):
+                                        pos_x, pos_y = x, y
+                                        self.paint(st_idx, pr_idx, (pos_x, pos_y), new_size)
+                                        # thêm bước thêm action vào 1 danh sách
+                                        self.action_list[st_idx].append({"stock_idx": st_idx, "size": new_size, "position": (pos_x, pos_y), "product_idx": pr_idx})
+                                        break
+                                if pos_x is not None and pos_y is not None:
                                     break
+                                
                             if pos_x is not None and pos_y is not None:
                                 break
-                            
-                        if pos_x is not None and pos_y is not None:
-                            break
-                        
-            sorted_list = self.sort_stock_indices_by_bounding_box()
-            for ele in reversed(sorted_list):
-                st_idx = ele[0]
-                if (self.cutted_stocks[st_idx]==0):
-                    continue
+                       
+            # sorted_list = self.sort_stock_indices_by_bounding_box()
+            # for ele in reversed(sorted_list):
+            #     st_idx = ele[0]
+            #     if (self.cutted_stocks[st_idx]==0):
+            #         continue
                 
-                stock = self.stocks[st_idx]
-                temp_w, temp_h = ele[1], ele[2]
-                size = self._get_stock_size_(stock)
-                # print (temp_w, " ", temp_h)
+            #     stock = self.stocks[st_idx]
+            #     temp_w, temp_h = ele[1], ele[2]
+            #     size = self._get_stock_size_(stock)
+            #     # print (temp_w, " ", temp_h)
 
-                # cắt thử các stock nhỏ hơn
-                for st_idx2 in reversed(self.stocks_indices):
-                    check_stock = self.stocks[st_idx2]
-                    check_size = self._get_stock_size_(check_stock)
+            #     # cắt thử các stock nhỏ hơn
+            #     for st_idx2 in reversed(self.stocks_indices):
+            #         check_stock = self.stocks[st_idx2]
+            #         check_size = self._get_stock_size_(check_stock)
                     
-                    if (check_size[0] * check_size[1] < temp_w * temp_h):
-                        break
+            #         if (check_size[0] * check_size[1] < temp_w * temp_h):
+            #             break
 
-                    if (check_size[0] * check_size[1] >= size[0] * size[1]):
-                        break
+            #         if (check_size[0] * check_size[1] >= size[0] * size[1]):
+            #             break
 
-                    if self._can_place_(check_stock, (0,0), (temp_w, temp_h)):
-                        self.copyAtoB(st_idx, (0,0), st_idx2, (0,0), (temp_w, temp_h), False)
-                        for ac in self.action_list[st_idx]:
-                            ac_copy = ac.copy()  # Tạo bản sao của ac
-                            ac_copy['stock_idx'] = st_idx2  # Thay đổi stock_idx trong bản sao
-                            self.action_list[st_idx2].append(ac_copy)  # Thêm bản sao vào danh sách mới
+            #         if self._can_place_(check_stock, (0,0), (temp_w, temp_h)):
+            #             self.copyAtoB(st_idx, (0,0), st_idx2, (0,0), (temp_w, temp_h), False)
+            #             for ac in self.action_list[st_idx]:
+            #                 ac_copy = ac.copy()  # Tạo bản sao của ac
+            #                 ac_copy['stock_idx'] = st_idx2  # Thay đổi stock_idx trong bản sao
+            #                 self.action_list[st_idx2].append(ac_copy)  # Thêm bản sao vào danh sách mới
                         
-                        self.action_list[st_idx].clear()
-                        break
+            #             self.action_list[st_idx].clear()
+            #             break
                     
                     
                     # if self._can_place_(check_stock, (0,0), (temp_h, temp_w)):
@@ -243,7 +242,8 @@ class Policy2312776(Policy):
                 for j in range(height):
                     self.stocks[idxB][x_B+j][y_B+i] = self.stocks[idxA][x_A+i][y_A+j]
                     self.stocks[idxA][x_A+i][y_A+j] = -1
-                    
+        
+        self.cutted_stocks[idxB] = 1   
         if (np.all(self.stocks[idxA]<0)):
             self.cutted_stocks[idxA] = 0
     
@@ -284,7 +284,7 @@ class Policy2312776(Policy):
         action = flattened_action_list[self.action_called]
 
         # xem đã đủ hay chưa, nếu đã lấy hết action, thì set first_action=True để reset cho dữ liệu mới
-        if (self.action_called==self.amount_of_products-1):
+        if (self.action_called>=self.amount_of_products-1):
             self.first_action = True
         else:
             self.action_called+=1
