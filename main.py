@@ -42,7 +42,7 @@ if __name__ == "__main__":
     #         ep += 1
 
     # Uncomment the following code to test your policy
-    # # Reset the environment
+    # Reset the environment
     observation, info = env.reset(seed=42)
     print(info)
 
