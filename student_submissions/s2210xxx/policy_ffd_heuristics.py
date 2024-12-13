@@ -1,10 +1,9 @@
 from policy import Policy
-
 import numpy as np
 import copy as cp
 import time
 
-class Policy2312776(Policy):
+class Policy_ffd_heuristics(Policy):
     def __init__(self):
         # data variable
         self.stocks = []
@@ -84,7 +83,6 @@ class Policy2312776(Policy):
             self.reset()
             self.init_variable(observation["stocks"], observation["products"])
             self.first_action = False
-            
             for pr_idx in self.products_indices:
                 prod = self.products[pr_idx]
                 # Kiểm tra số lượng của sản phẩm
@@ -110,7 +108,7 @@ class Policy2312776(Policy):
                                         pos_x, pos_y = x, y
                                         self.paint(st_idx, pr_idx, (pos_x, pos_y), prod_size)
                                         # thêm bước thêm action vào 1 danh sách
-                                        self.action_list[st_idx].append({"stock_idx": st_idx, "size": prod_size, "position": (pos_x, pos_y), "product_idx": pr_idx})
+                                        self.action_list[st_idx].append({"stock_idx": st_idx, "size": prod_size, "position": (pos_x, pos_y), "product_idx": pr_idx, "rotate": False})
                                         break
                                 if pos_x is not None and pos_y is not None:
                                     break
@@ -128,7 +126,7 @@ class Policy2312776(Policy):
                                         pos_x, pos_y = x, y
                                         self.paint(st_idx, pr_idx, (pos_x, pos_y), new_size)
                                         # thêm bước thêm action vào 1 danh sách
-                                        self.action_list[st_idx].append({"stock_idx": st_idx, "size": new_size, "position": (pos_x, pos_y), "product_idx": pr_idx})
+                                        self.action_list[st_idx].append({"stock_idx": st_idx, "size": new_size, "position": (pos_x, pos_y), "product_idx": pr_idx, "rotate": True})
                                         break
                                 if pos_x is not None and pos_y is not None:
                                     break
@@ -163,7 +161,6 @@ class Policy2312776(Policy):
                     if self._can_place_(check_stock, (0,0), (temp_w, temp_h)):
                         self.copyAtoB(st_idx, (0,0), st_idx2, (0,0), (temp_w, temp_h), False)
                         break
-                    
         
         # Lấy thời gian kết thúc
         end_time = time.time()
@@ -183,8 +180,8 @@ class Policy2312776(Policy):
         min_col, max_col = cols.min(), cols.max()
 
         # Tính kích thước bao phủ
-        width = max_col - min_col + 1
-        height = max_row - min_row + 1
+        width = max_row - min_row + 1
+        height = max_col - min_col + 1
 
         return width, height
     
@@ -210,23 +207,20 @@ class Policy2312776(Policy):
         width, height = size
         x_A, y_A = posA
         x_B, y_B = posB
-        
         for i in range(width):
             for j in range(height):
                 self.stocks[idxB][x_B+i][y_B+j] = self.stocks[idxA][x_A+i][y_A+j]
                 self.stocks[idxA][x_A+i][y_A+j] = -1
 
-        
         for ac in self.action_list[idxA]:
             ac_copy = cp.copy(ac)  # Tạo bản sao của ac
             ac_copy['stock_idx'] = idxB  # Thay đổi stock_idx trong bản sao
-            if rotate:
-                ac_copy['size'][0], ac_copy['size'][1] = ac_copy['size'][1], ac_copy['size'][0]  # Hoán đổi kích thước nếu xoay
             self.action_list[idxB].append(ac_copy)  # Thêm bản sao vào danh sách mới
         
         self.action_list[idxA].clear()
         self.cutted_stocks[idxB] = 1
-        self.cutted_stocks[idxA] = 0
+        if(np.all(self.stocks[idxA]<0)):
+            self.cutted_stocks[idxA] = 0
 
     # Initialize member variable
     def init_variable(self, list_stocks, list_products):
@@ -267,6 +261,7 @@ class Policy2312776(Policy):
             self.first_action = True
         else:
             self.action_called+=1
+            
         return action
     
     # Đánh giá giải thuật
