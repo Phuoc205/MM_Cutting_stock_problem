@@ -57,25 +57,26 @@ if __name__ == "__main__":
     # Uncomment the following code to test your policy
     # Reset the environment
     # policy = Policychung(2)
-    policy = Policychung(1)
-    # policy = ModifiedGreedy()
+    # policy = Policychung(1)
+    policy = ModifiedGreedy()
     # custom_test, minh tu cho test case de xu ly
     # Phước có thể tự thiết kế 1 test case theo mẫu dưới
     # info = []
     # observation = {
     #     "products": [
-    #     {"size": np.array([2, 1]), "quantity": 15},
-    #     {"size": np.array([4, 2]), "quantity": 15},
     #     {"size": np.array([5, 3]), "quantity": 6},
-    #     {"size": np.array([7, 4]), "quantity": 9},
+    #     {"size": np.array([2, 1]), "quantity": 15},
+    #     {"size": np.array([4, 2]), "quantity": 8},
     #     {"size": np.array([8, 5]), "quantity": 6},
-    #     # {"size": np.array([24, 13]), "quantity": 1},
+    #     {"size": np.array([7, 4]), "quantity": 9},
+    #     {"size": np.array([3, 1]), "quantity": 5}
     # ],
     #     "stocks": [
     #     np.full((24,14), -1),
     #     np.full((24,13), -1),
     #     np.full((18,10), -1),
     #     np.full((13,10), -1),
+    #     np.full((8,10), -1)
     # ],
     # }
 
@@ -91,7 +92,7 @@ if __name__ == "__main__":
     # policy.evaluate()
 
     # test cua thay, co render, chay 2 lan cho den khi cat het product
-    seed = 42
+    seed = 67
     times = 1
     
     for _ in range(times):

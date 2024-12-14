@@ -83,12 +83,13 @@ class Policy2312593(Policy):
         
         for pr_idx in self.m_sorted_product_index:
             prod = list_prods[pr_idx]
+            prod_size = prod['size']
             if prod["quantity"] > 0:
                 # Loop through all stocks
                 for st_idx in self.m_sorted_stock_index:
                     stock = list_stocks[st_idx]
                     stock_w, stock_h = self._get_stock_size_(stock)
-                    prod_w, prod_h = prod['size']
+                    prod_w, prod_h = prod_size
 
                     # evaluate
                     used = np.any(stock >= 0)
@@ -102,6 +103,7 @@ class Policy2312593(Policy):
                     for x in range(stock_w - prod_w + 1):
                         for y in range(stock_h - prod_h + 1):
                             if self._can_place_(stock, (x, y), (prod_w, prod_h)):
+                                stock_idx = st_idx
                                 prod_size = (prod_w, prod_h)
 
                                 if (not used):
@@ -125,6 +127,7 @@ class Policy2312593(Policy):
                     for x in range(stock_w - prod_h + 1):
                         for y in range(stock_h - prod_w + 1):
                             if self._can_place_(stock, (x, y), (prod_h, prod_w)):
+                                stock_idx = st_idx
                                 prod_size = (prod_h, prod_w)
 
                                 if (not used):
